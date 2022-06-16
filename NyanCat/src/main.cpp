@@ -10,7 +10,7 @@
 #define SCALE 3
 #define LED_PINS 25
 #define NUM_LEDS 10
-#define OUTPUT_GAIN 10
+#define OUTPUT_GAIN 200
 
 CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
@@ -133,17 +133,17 @@ void initialiseAudio()
   }
   M5.Lcd.println("SD card initialised");
 
-  if (SD.exists("/NyanCat.wav"))
+  if (SD.exists("/HumidityAlert.wav"))
   {
-    Serial.println("NyanCat.wav exists");
+    Serial.println("HumidityAlert.wav exists");
   }
   else
   {
-    Serial.println("NyanCat.wav doesn't exist");
+    Serial.println("HumidityAlert.wav doesn't exist");
   }
 
   // Load wav file
-  file = new AudioFileSourceSD("/NyanCat.wav");
+  file = new AudioFileSourceSD("/HumidityAlert.wav");
   id3 = new AudioFileSourceID3(file);
   out = new AudioOutputI2S(0, 0);
   out->SetPinout(12, 0, 2);

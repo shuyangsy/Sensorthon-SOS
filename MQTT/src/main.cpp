@@ -94,7 +94,6 @@ void setup() {
   // Initialise M5 LED to off
   M5.begin();
   M5.Axp.SetLed(false);
-
   connectWifi();
   connectAWSIoTCore();
 }
@@ -118,7 +117,7 @@ void loop() {
     thingObject["time"] = millis();
     thingObject["team"] = TEAMNAME;
 
-    jsonDoc ["message"] = "Hello, this is transmitting from the Edukit";
+    jsonDoc ["message"] = "Alert! High Humidity!";
 
     serializeJsonPretty(jsonDoc, jsonBuffer);
     Serial.println("");
