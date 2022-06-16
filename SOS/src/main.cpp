@@ -29,25 +29,23 @@ void displayValues(float temp, float humid) {
   M5.Lcd.setTextSize(2);
   M5.Lcd.printf("Temperature = %.2fC", temp);
 
-  M5.Lcd.setCursor(0,50);
+  M5.Lcd.setCursor(0,20);
   M5.Lcd.setTextSize(2);
   M5.Lcd.printf("Humidity = %.0f", humid);
   Serial.printf("%.2f degrees\n%.0f \n", temp, humid);
 
   if ( digitalRead(ADCPIN) == HIGH) {
-    M5.Lcd.clear();
     Serial.println("Water sensor reading: HIGH");
     Serial.println("Water Detected");
-    M5.Lcd.setCursor(0,60);
-    M5.Lcd.print("Water Reading = HIGH");
     M5.Lcd.setCursor(0,70);
+    M5.Lcd.print("Water Reading = HIGH");
+    M5.Lcd.setCursor(0,90);
     M5.Lcd.print("Water detected!!!!!!");
   } else {
-    M5.Lcd.clear();
     Serial.println("Water sensor reading: LOW");
-    M5.Lcd.setCursor(0,60);
-    M5.Lcd.print("Water Reading = LOW");
     M5.Lcd.setCursor(0,70);
+    M5.Lcd.print("Water Reading = LOW");
+    M5.Lcd.setCursor(0,90);
     M5.Lcd.print("No Water detected");
    }
   M5.update(); //Update M5Stack Core2
@@ -71,7 +69,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  delay(1000);
+  delay(1500);
   temp = dht11("temperature");
   humid = dht11("humidity");
 
