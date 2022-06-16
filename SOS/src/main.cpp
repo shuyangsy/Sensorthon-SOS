@@ -32,6 +32,7 @@ void displayValues(float temp, float humid) {
   M5.Lcd.setCursor(0,50);
   M5.Lcd.setTextSize(2);
   M5.Lcd.printf("Humidity = %.0f", humid);
+  Serial.printf("%.2f degrees\n%.0f \n", temp, humid);
 
   if ( digitalRead(ADCPIN) == HIGH) {
     M5.Lcd.clear();
