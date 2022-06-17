@@ -174,9 +174,8 @@ void audioTask()
     }
     else
     {
-      Serial.println("WAV finished playing");
       wav->stop();
-      wav->begin(id3, out);
+      break;
     }
   }
 }
@@ -262,10 +261,10 @@ void loop() {
 
   delay(500);
   displayValues(temp, humid);
-  xTaskCreatePinnedToCore(rainbowTask, "rainbow", 4096, NULL, 1, NULL, 0);
   
   if (humid > 45) {
     audioTask();
+    initialiseAudio();
   }
   
   // MQTT
