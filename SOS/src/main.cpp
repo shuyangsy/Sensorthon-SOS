@@ -262,7 +262,7 @@ void loop() {
   delay(500);
   displayValues(temp, humid);
   
-  if (humid > 45) {
+  if (humid > 45 || (digitalRead(ADCPIN) == HIGH) ) {
     audioTask();
     initialiseAudio();
   }
@@ -281,6 +281,7 @@ void loop() {
     // Initialise json object and print
     StaticJsonDocument<200> jsonDoc;
     char jsonBuffer[512];
+    char jsonBuffer_water[512];
 
     JsonObject thingObject = jsonDoc.createNestedObject("body");
     thingObject["id"] = "b0b3e11b-01c4-444d-ad5b-073f6fe6f43b";
@@ -294,10 +295,24 @@ void loop() {
     Serial.print("Publishing to " + AWS_IOT_PUBLISH_TOPIC + ": ");
     Serial.println(jsonBuffer);
 
+    JsonObject waterObject = jsonDoc.createNestedObject("body");
+    waterObject["id"] = "b0b3e11b-01c4-444d-ad5b-073f6fe6f43b";
+    waterObject["type"] = "SMS";
+    waterObject["message"] = "Alert: Water Leakage Detected!";
+    waterObject["water"] = digitalRead(ADCPIN);
+    
+
+    serializeJsonPretty(jsonDoc, jsonBuffer_water);
+    Serial.println("");
+    Serial.print("Publishing to " + AWS_IOT_PUBLISH_TOPIC + ": ");
+    Serial.println(jsonBuffer_water);
+
+
     // M5.Lcd.clear();
     M5.Lcd.printf("Message has been sent at %d", millis());
 
     // Publish json to AWS IoT Core
     mqttClient.publish(AWS_IOT_PUBLISH_TOPIC.c_str(), jsonBuffer);
+    mqttClient.publish(AWS_IOT_PUBLISH_TOPIC.c_str(), jsonBuffer_water);
   }
 }
