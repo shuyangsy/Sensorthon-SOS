@@ -5,12 +5,21 @@
 #include <M5Core2.h>
 #include <MQTTClient.h>
 #include <WiFiClientSecure.h>
+#include <FastLED.h>
 #include "secrets.h"
 #include "WiFi.h"
+#include "AudioFileSourceSD.h"
+#include "AudioFileSourceID3.h"
+#include "AudioGeneratorWAV.h"
+#include "AudioOutputI2S.h"
 
 #define ADCPIN 36 // Analogue to Digital, Yellow Edukit Cable 
 #define DACPIN 26 // Digital to Analogue, White Edukit Cable
 #define DHTTYPE DHT11
+#define SCALE 3
+#define LED_PINS 25
+#define NUM_LEDS 10
+#define OUTPUT_GAIN 100
 // The MQTT topics that this device should publish/subscribe to
 #define AWS_IOT_PUBLISH_TOPIC AWS_IOT_PUBLISH_TOPIC_THING
 #define AWS_IOT_SUBSCRIBE_TOPIC AWS_IOT_SUBSCRIBE_TOPIC_THING
@@ -19,6 +28,13 @@
 
 WiFiClientSecure wifiClient = WiFiClientSecure();
 MQTTClient mqttClient = MQTTClient(256);
+
+CRGB leds[NUM_LEDS];
+uint8_t hue = 0;
+AudioGeneratorWAV *wav;
+AudioFileSourceSD *file;
+AudioOutputI2S *out;
+AudioFileSourceID3 *id3;
 
 long lastMsg = 0;
 
@@ -137,6 +153,67 @@ void connectAWSIoTCore()
   mqttClient.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
 }
 
+void rainbowTask(void *pvParameters)
+{
+  while (1)
+  {
+    FastLED.showColor(CHSV(hue++, 255, 255));
+  }
+}
+
+void audioTask()
+{
+  while (1)
+  {
+    if (wav->isRunning())
+    {
+      if (!wav->loop())
+      {
+        wav->stop();
+      }
+    }
+    else
+    {
+      Serial.println("WAV finished playing");
+      wav->stop();
+      wav->begin(id3, out);
+    }
+  }
+}
+
+void initialiseAudio()
+{
+  // Enable speaker
+  M5.Axp.SetSpkEnable(true);
+
+  // Initialise SD card slot
+  if (!SD.begin())
+  {
+    Serial.println("SD card failed to mount or not present");
+    while (1)
+      ;
+  }
+  M5.Lcd.println("SD card initialised");
+
+  if (SD.exists("/HumidityAlert.wav"))
+  {
+    Serial.println("HumidityAlert.wav exists");
+  }
+  else
+  {
+    Serial.println("HumidityAlert.wav doesn't exist");
+  }
+
+  // Load wav file
+  file = new AudioFileSourceSD("/HumidityAlert.wav");
+  id3 = new AudioFileSourceID3(file);
+  out = new AudioOutputI2S(0, 0);
+  out->SetPinout(12, 0, 2);
+  out->SetOutputModeMono(true);
+  out->SetGain((float)OUTPUT_GAIN / 100.0);
+  wav = new AudioGeneratorWAV();
+  wav->begin(id3, out);
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -153,6 +230,11 @@ void setup() {
   M5.Lcd.print("Device setup");
   M5.Lcd.clear();
   M5.Axp.SetLed(false);
+  initialiseAudio();
+
+  // Specify LED pins
+  FastLED.addLeds<SK6812, LED_PINS>(leds, NUM_LEDS);
+
   connectWifi();
   connectAWSIoTCore();
 }
@@ -180,6 +262,11 @@ void loop() {
 
   delay(500);
   displayValues(temp, humid);
+  xTaskCreatePinnedToCore(rainbowTask, "rainbow", 4096, NULL, 1, NULL, 0);
+  
+  if (humid > 45) {
+    audioTask();
+  }
   
   // MQTT
   // Reconnection Code if disconnected from the MQTT Client/Broker
@@ -199,7 +286,7 @@ void loop() {
     JsonObject thingObject = jsonDoc.createNestedObject("body");
     thingObject["id"] = "b0b3e11b-01c4-444d-ad5b-073f6fe6f43b";
     thingObject["type"] = "SMS";
-    thingObject["message"] = "Alert Humidity over 45%! High Chance of Mould! Please check";
+    thingObject["message"] = "Alert: Humidity over 45%! High Chance of Mould! Please check!";
     thingObject["temp"] = temp;
     thingObject["humidity"] = humid;
 

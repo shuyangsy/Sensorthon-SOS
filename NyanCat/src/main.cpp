@@ -10,7 +10,7 @@
 #define SCALE 3
 #define LED_PINS 25
 #define NUM_LEDS 10
-#define OUTPUT_GAIN 200
+#define OUTPUT_GAIN 100
 
 CRGB leds[NUM_LEDS];
 uint8_t hue = 0;
